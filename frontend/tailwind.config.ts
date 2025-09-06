@@ -15,6 +15,7 @@ const config: Config = {
         'electric-lime': '#CCFF00', 
         'jet-black': '#0D0D0D',
         'gunmetal-gray': '#1F1F1F',
+        'bg-jet-black': '#0A0A0A',
         
         // Additional grays for better contrast
         gray: {
