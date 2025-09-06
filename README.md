@@ -12,7 +12,7 @@
 [![Contracts](https://img.shields.io/badge/Contracts-Solidity%200.8.28-red)](contracts/)
 [![Network](https://img.shields.io/badge/Network-Somnia-purple)](https://somnia.network)
 
-[Live Demo](https://velofi.vercel.app) • [Documentation](https://docs.velofi.com) • [Discord](https://discord.gg/velofi)
+[Live Demo](https://velofi-frontend.vercel.app) • [Documentation](https://docs.velofi.com) • [Discord](https://discord.gg/velofi)
 
 </div>
 
