@@ -4,7 +4,7 @@ pragma solidity ^0.8.28;
 /**
  * @title CreditScore Contract
  * @dev Decentralized credit scoring system based on on-chain activities
- * Features: DeFi activity tracking, credit score calculation, reputation building
+ * Features: DeFi activity tracking, credit score calculation, reputation building.
  */
 contract CreditScore {
     // Credit score parameters
