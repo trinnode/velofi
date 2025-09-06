@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowRight, Zap, Shield, TrendingUp, Users, Sparkles } from 'lucide-react'
 import InterestAccrualDisplay from '../components/InterestAccrualDisplay'
@@ -62,7 +63,14 @@ export default function HomePage() {
           >
             <div className="flex justify-center mb-8">
               <div className="relative">
-                <Sparkles className="w-12 h-12 text-neon-magenta animate-pulse" />
+                <Image
+                  src="/Logo.png"
+                  alt="VeloFi Logo"
+                  width={80}
+                  height={80}
+                  className="animate-pulse rounded-xl"
+                  priority
+                />
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-electric-lime rounded-full animate-ping" />
               </div>
             </div>
