@@ -6,6 +6,7 @@ import { useContract } from '../hooks/useContract'
 import { useRealTimeData } from '../hooks/useRealTimeData'
 import { formatEther, parseEther } from 'viem'
 import { toast } from 'react-hot-toast'
+import ConnectWalletButton from '../components/ConnectWalletButton'
 
 export default function GovernancePage() {
   const { address, isConnected } = useAccount()
@@ -251,9 +252,11 @@ export default function GovernancePage() {
                   {!isConnected ? (
                     <>
                       <p className="mb-4">Connect your wallet to create proposals</p>
-                      <button className="px-6 py-2 bg-electric-lime text-jet-black rounded-lg hover:bg-electric-lime/80 transition-colors">
-                        Connect Wallet
-                      </button>
+                      <ConnectWalletButton 
+                        variant="secondary"
+                        size="md"
+                        className="w-auto"
+                      />
                     </>
                   ) : (
                     <>

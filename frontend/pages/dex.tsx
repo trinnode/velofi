@@ -6,6 +6,7 @@ import { useContract } from '../hooks/useContract'
 import { useRealTimeData } from '../hooks/useRealTimeData'
 import { formatEther, parseEther } from 'viem'
 import { toast } from 'react-hot-toast'
+import ConnectWalletButton from '../components/ConnectWalletButton'
 
 export default function DexPage() {
   const { address, isConnected } = useAccount()
@@ -313,9 +314,11 @@ export default function DexPage() {
               ) : (
                 <div className="text-center text-gray-400 py-8">
                   <p className="mb-4">Connect your wallet to start trading</p>
-                  <button className="px-6 py-2 bg-neon-magenta text-white rounded-lg hover:bg-neon-magenta/80 transition-colors">
-                    Connect Wallet
-                  </button>
+                  <ConnectWalletButton 
+                    variant="primary"
+                    size="md"
+                    className="w-auto"
+                  />
                 </div>
               )}
             </div>

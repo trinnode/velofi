@@ -6,6 +6,7 @@ import { useContract } from '../hooks/useContract'
 import { useRealTimeData } from '../hooks/useRealTimeData'
 import { formatEther, parseEther } from 'viem'
 import { toast } from 'react-hot-toast'
+import ConnectWalletButton from '../components/ConnectWalletButton'
 
 export default function CreditPage() {
   const { address, isConnected } = useAccount()
@@ -267,9 +268,11 @@ export default function CreditPage() {
               <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
                 Connect your wallet to access your personalized credit profile and start building your on-chain creditworthiness.
               </p>
-              <button className="px-8 py-3 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-lg font-semibold text-jet-black hover:shadow-lg hover:shadow-neon-magenta/25 transition-all duration-300">
-                Connect Wallet
-              </button>
+              <ConnectWalletButton 
+                variant="primary"
+                size="lg"
+                className="w-auto"
+              />
             </div>
           </motion.div>
         )}

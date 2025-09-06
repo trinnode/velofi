@@ -3,11 +3,12 @@ import { motion } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
-import { Menu, X, Wallet, User, LogOut, Settings } from 'lucide-react'
+import { Menu, X, User, LogOut, Settings } from 'lucide-react'
 import { useAccount, useDisconnect } from 'wagmi'
 import { useSIWE } from '../hooks/useSIWE'
 import { formatEther } from 'viem'
 import { toast } from 'react-hot-toast'
+import ConnectWalletButton from './ConnectWalletButton'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -153,14 +154,7 @@ export default function Header() {
                 )}
               </div>
             ) : (
-              <Link
-                href="/signin"
-                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-lg font-semibold text-jet-black hover:shadow-lg hover:shadow-neon-magenta/25 transition-all duration-300"
-              >
-                <Wallet className="w-4 h-4" />
-                <span className="hidden sm:inline">Connect Wallet</span>
-                <span className="sm:hidden">Connect</span>
-              </Link>
+              <ConnectWalletButton />
             )}
 
             {/* Mobile Menu Button */}
@@ -197,6 +191,11 @@ export default function Header() {
                   {item.name}
                 </Link>
               ))}
+              
+              {/* Mobile Wallet Connection */}
+              <div className="px-4 pt-4">
+                <ConnectWalletButton className="w-full justify-center" />
+              </div>
             </nav>
           </motion.div>
         )}

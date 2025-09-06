@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Github, Twitter, MessageCircle, Mail, Heart, ExternalLink } from 'lucide-react'
 
 export default function Footer() {
@@ -8,31 +9,31 @@ export default function Footer() {
   const socialLinks = [
     {
       name: 'GitHub',
-      href: 'https://github.com/velofi',
+      href: 'https://github.com/trinnode/velofi',
       icon: <Github className="w-5 h-5" />
     },
     {
       name: 'Twitter',
-      href: 'https://twitter.com/velofi',
+      href: 'https://twitter.com/_trinnex',
       icon: <Twitter className="w-5 h-5" />
     },
     {
       name: 'Discord',
-      href: 'https://discord.gg/velofi',
+      href: 'https://discord.gg/trinnex',
       icon: <MessageCircle className="w-5 h-5" />
     },
     {
       name: 'Email',
-      href: 'mailto:hello@velofi.com',
+      href: 'mailto:trinnextrin404nex@gmail.com',
       icon: <Mail className="w-5 h-5" />
     }
   ]
 
   const quickLinks = [
-    { name: 'Documentation', href: '/docs' },
-    { name: 'Security', href: '/security' },
-    { name: 'Terms of Service', href: '/terms' },
-    { name: 'Privacy Policy', href: '/privacy' }
+    { name: 'Documentation', href: 'https://github.com/trinnode/velofi/blob/main/README.md' },
+    { name: 'Security', href: 'https://github.com/trinnode/velofi/blob/main/README.md' },
+    { name: 'Terms of Service', href: 'https://github.com/trinnode/velofi/blob/main/README.md' },
+    { name: 'Privacy Policy', href: 'https://github.com/trinnode/velofi/blob/main/README.md' }
   ]
 
   const productLinks = [
@@ -43,7 +44,7 @@ export default function Footer() {
   ]
 
   const resourceLinks = [
-    { name: 'Whitepaper', href: '/whitepaper' },
+    { name: 'Whitepaper', href: 'https://github.com/trinnode/velofi/blob/main/README.md' },
     { name: 'API Documentation', href: '/api-docs' },
     { name: 'Bug Reports', href: '/bugs' },
     { name: 'Feature Requests', href: '/features' }
@@ -56,14 +57,21 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-lg flex items-center justify-center">
-                <span className="text-jet-black font-bold text-lg">V</span>
+            <Link href="/" className="flex items-center gap-3 mb-4 group">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                <Image
+                  src="/Logo.png"
+                  alt="VeloFi Logo"
+                  width={40}
+                  height={40}
+                  className="rounded-lg"
+                  priority
+                />
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-neon-magenta to-electric-lime bg-clip-text text-transparent">
                 VeloFi
               </span>
-            </div>
+            </Link>
             
             <p className="text-gray-300 mb-6 leading-relaxed max-w-md">
               The next-generation DeFi ecosystem built on Somnia Network. 

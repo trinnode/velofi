@@ -4,11 +4,15 @@ import { Key, Shield, Loader2, Check, AlertCircle, Wallet } from 'lucide-react'
 import { useSIWE } from '../hooks/useSIWE'
 import { useAccount } from 'wagmi'
 import { toast } from 'react-hot-toast'
+import { useRouter } from 'next/router'
+import ConnectWalletButton from '../components/ConnectWalletButton'
 
 export default function SignInPage() {
   const [mounted, setMounted] = useState(false)
   const [isConnecting, setIsConnecting] = useState(false)
   
+  const router = useRouter()
+  const { returnUrl } = router.query
   const { address, isConnected, connector } = useAccount()
   const { signIn, signOut, isSignedIn, isLoading, error } = useSIWE()
 
@@ -16,11 +20,22 @@ export default function SignInPage() {
     setMounted(true)
   }, [])
 
+  // Redirect after successful authentication
+  useEffect(() => {
+    if (isSignedIn && returnUrl && typeof returnUrl === 'string') {
+      toast.success('Successfully signed in!')
+      router.push(returnUrl)
+    }
+  }, [isSignedIn, returnUrl, router])
+
   const handleSignIn = async () => {
     try {
       setIsConnecting(true)
       await signIn()
-      toast.success('Successfully signed in!')
+      if (!returnUrl) {
+        toast.success('Successfully signed in!')
+      }
+      // If returnUrl exists, the redirect will happen in the useEffect above
     } catch (error) {
       console.error('Sign in failed:', error)
       toast.error('Sign in failed. Please try again.')
@@ -137,11 +152,7 @@ export default function SignInPage() {
               {!isConnected ? (
                 <div className="text-center">
                   <p className="text-gray-400 mb-4">Connect your wallet to continue</p>
-                  <button
-                    className="w-full px-6 py-3 bg-gradient-to-r from-electric-lime to-neon-magenta rounded-lg font-semibold text-jet-black hover:shadow-lg hover:shadow-electric-lime/25 transition-all duration-300"
-                  >
-                    Connect Wallet
-                  </button>
+                  <ConnectWalletButton className="w-full justify-center" size="lg" />
                 </div>
               ) : !isSignedIn ? (
                 <button
