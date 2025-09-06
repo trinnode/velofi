@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { Menu, X, Wallet, User, LogOut, Settings } from 'lucide-react'
 import { useAccount, useDisconnect } from 'wagmi'
@@ -56,8 +57,15 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-              <span className="text-jet-black font-bold text-lg">V</span>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <Image
+                src="/Logo.png"
+                alt="VeloFi Logo"
+                width={40}
+                height={40}
+                className="rounded-lg"
+                priority
+              />
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-neon-magenta to-electric-lime bg-clip-text text-transparent">
               VeloFi
