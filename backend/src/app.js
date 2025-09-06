@@ -156,34 +156,34 @@ process.on('unhandledRejection', (reason, promise) => {
 const PORT = process.env.PORT || 5000;
 
 // Start server
-const server = app.listen(PORT, () => {
-  logger.info(`🚀 VeloFi Backend Server running on port ${PORT}`, {
-    environment: process.env.NODE_ENV,
-    port: PORT,
-    timestamp: new Date().toISOString()
-  });
-});
+// const server = app.listen(PORT, () => {
+//   logger.info(`🚀 VeloFi Backend Server running on port ${PORT}`, {
+//     environment: process.env.NODE_ENV,
+//     port: PORT,
+//     timestamp: new Date().toISOString()
+//   });
+// });
 
-// Handle server errors
-server.on('error', (error) => {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
+// // Handle server errors
+// server.on('error', (error) => {
+//   if (error.syscall !== 'listen') {
+//     throw error;
+//   }
 
-  const bind = typeof PORT === 'string' ? 'Pipe ' + PORT : 'Port ' + PORT;
+//   const bind = typeof PORT === 'string' ? 'Pipe ' + PORT : 'Port ' + PORT;
 
-  switch (error.code) {
-    case 'EACCES':
-      logger.error(`${bind} requires elevated privileges`);
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      logger.error(`${bind} is already in use`);
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-});
+//   switch (error.code) {
+//     case 'EACCES':
+//       logger.error(`${bind} requires elevated privileges`);
+//       process.exit(1);
+//       break;
+//     case 'EADDRINUSE':
+//       logger.error(`${bind} is already in use`);
+//       process.exit(1);
+//       break;
+//     default:
+//       throw error;
+//   }
+// });
 
 module.exports = app;
