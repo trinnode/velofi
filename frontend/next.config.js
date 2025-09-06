@@ -4,7 +4,6 @@ const nextConfig = {
     typedRoutes: true,
   },
   reactStrictMode: true,
-  swcMinify: true,
   poweredByHeader: false,
   compress: true,
   generateEtags: false,
