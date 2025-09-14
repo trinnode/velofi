@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const path = require("path");
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -100,6 +103,9 @@ const nextConfig = {
 
   // Output configuration
   output: "standalone",
+
+  // Fix workspace root warning for monorepo deployment
+  outputFileTracingRoot: path.join(__dirname, "../.."),
 
   // Experimental features
   experimental: {
