@@ -1,58 +1,34 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Key, Shield, Loader2, Check, AlertCircle, Wallet } from 'lucide-react'
-import { useSIWE } from '../hooks/useSIWE'
+import { Wallet, Check, AlertCircle, Shield } from 'lucide-react'
 import { useAccount } from 'wagmi'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/router'
-import ConnectWalletButton from '../components/ConnectWalletButton'
 
 export default function SignInPage() {
   const [mounted, setMounted] = useState(false)
-  const [isConnecting, setIsConnecting] = useState(false)
-  
   const router = useRouter()
   const { returnUrl } = router.query
   const { address, isConnected, connector } = useAccount()
-  const { signIn, signOut, isSignedIn, isLoading, error } = useSIWE()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Redirect after successful authentication
+  // Redirect after successful wallet connection
   useEffect(() => {
-    if (isSignedIn && returnUrl && typeof returnUrl === 'string') {
-      toast.success('Successfully signed in!')
-      router.push(returnUrl)
-    }
-  }, [isSignedIn, returnUrl, router])
-
-  const handleSignIn = async () => {
-    try {
-      setIsConnecting(true)
-      await signIn()
-      if (!returnUrl) {
-        toast.success('Successfully signed in!')
+    if (isConnected && address) {
+      toast.success('Successfully connected! Welcome to VeloFi!')
+      if (returnUrl && typeof returnUrl === 'string') {
+        router.push(returnUrl)
+      } else {
+        router.push('/dashboard')
       }
-      // If returnUrl exists, the redirect will happen in the useEffect above
-    } catch (error) {
-      console.error('Sign in failed:', error)
-      toast.error('Sign in failed. Please try again.')
-    } finally {
-      setIsConnecting(false)
     }
-  }
+  }, [isConnected, address, returnUrl, router])
 
-  const handleSignOut = async () => {
-    try {
-      await signOut()
-      toast.success('Successfully signed out!')
-    } catch (error) {
-      console.error('Sign out failed:', error)
-      toast.error('Sign out failed. Please try again.')
-    }
-  }
+  // Removed handleSignOut (legacy SIWE)
 
   if (!mounted) return null
 
@@ -68,17 +44,17 @@ export default function SignInPage() {
           {/* Header */}
           <div className="flex justify-center mb-6">
             <div className="p-4 bg-neon-magenta/20 rounded-full">
-              <Key className="w-12 h-12 text-neon-magenta" />
+              <Wallet className="w-12 h-12 text-neon-magenta" />
             </div>
           </div>
 
           <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-neon-magenta to-electric-lime bg-clip-text text-transparent">
-            Sign In to VeloFi
+            Connect to VeloFi
           </h1>
 
           <p className="text-gray-300 mb-8 leading-relaxed">
-            Secure authentication using Sign-In with Ethereum (SIWE) protocol. 
-            Connect your wallet and verify your identity to access all VeloFi features.
+            Connect your wallet to access the next-generation DeFi platform.
+            Experience ultra-fast transactions on Somnia Network.
           </p>
 
           {/* Connection Status */}
@@ -122,96 +98,58 @@ export default function SignInPage() {
                   <Shield className="w-5 h-5 text-neon-magenta" />
                   <span className="font-medium text-white">Authentication</span>
                 </div>
-                {isSignedIn ? (
-                  <Check className="w-5 h-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-yellow-500" />
-                )}
+                {/* Authentication status logic removed. Always show unauthenticated icon. */}
+                <AlertCircle className="w-5 h-5 text-yellow-500" />
               </div>
               
               <p className="text-gray-400 text-sm">
-                {isSignedIn 
-                  ? 'Successfully authenticated with SIWE' 
-                  : 'Not authenticated - Sign in required'
-                }
+                {'Not authenticated - Sign in required'}
               </p>
             </div>
 
             {/* Error Display */}
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-                <div className="flex items-center gap-3 text-red-400">
-                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                  <p className="text-sm">{error}</p>
-                </div>
-              </div>
-            )}
+            {/* Error display removed. */}
 
             {/* Action Buttons */}
             <div className="space-y-4">
               {!isConnected ? (
                 <div className="text-center">
                   <p className="text-gray-400 mb-4">Connect your wallet to continue</p>
-                  <ConnectWalletButton className="w-full justify-center" size="lg" />
-                </div>
-              ) : !isSignedIn ? (
-                <button
-                  onClick={handleSignIn}
-                  disabled={isLoading || isConnecting}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-lg font-semibold text-jet-black hover:shadow-lg hover:shadow-neon-magenta/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isLoading || isConnecting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Signing In...
-                    </>
-                  ) : (
-                    <>
-                      <Key className="w-5 h-5" />
-                      Sign In with Ethereum
-                    </>
-                  )}
-                </button>
-              ) : (
-                <div className="space-y-4">
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
-                    <Check className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    <p className="text-green-400 font-medium">Successfully Authenticated!</p>
-                    <p className="text-gray-400 text-sm mt-1">You now have access to all VeloFi features</p>
+                  <div className="flex justify-center">
+                    <ConnectButton />
                   </div>
-                  
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full px-6 py-3 border-2 border-electric-lime text-electric-lime rounded-lg font-semibold hover:bg-electric-lime hover:text-jet-black transition-all duration-300"
-                  >
-                    Sign Out
-                  </button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <Check className="w-5 h-5 text-green-500" />
+                    <span className="text-green-500 font-medium">Wallet Connected!</span>
+                  </div>
+                  <p className="text-gray-400">Redirecting to dashboard...</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Features Available After Sign In */}
-          {!isSignedIn && (
-            <div className="mt-8 pt-8 border-t border-gray-700">
-              <h3 className="text-lg font-bold text-white mb-4">Access After Sign In</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {[
-                  'Savings & Interest',
-                  'Credit Scoring', 
-                  'Token Swapping',
-                  'DAO Voting',
-                  'Lending & Borrowing',
-                  'Liquidity Provision'
-                ].map((feature, index) => (
-                  <div key={feature} className="flex items-center gap-2 text-gray-300">
-                    <div className="w-1.5 h-1.5 bg-electric-lime rounded-full" />
-                    {feature}
-                  </div>
-                ))}
-              </div>
+          {/* Features Available After Connect */}
+          <div className="mt-8 pt-8 border-t border-gray-700">
+            <h3 className="text-lg font-bold text-white mb-4">Access After Connect</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {[
+                'Savings & Interest',
+                'Credit Scoring', 
+                'Token Swapping',
+                'DAO Voting',
+                'Lending & Borrowing',
+                'Liquidity Provision'
+              ].map((feature) => (
+                <div key={feature} className="flex items-center gap-2 text-gray-300">
+                  <div className="w-1.5 h-1.5 bg-electric-lime rounded-full" />
+                  {feature}
+                </div>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Security Notice */}
           <div className="mt-8 pt-8 border-t border-gray-700">

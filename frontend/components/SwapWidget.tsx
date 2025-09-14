@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowUpDown, TrendingUp, Zap, Settings, Loader2, AlertTriangle } from 'lucide-react'
+import { ArrowUpDown, Zap, Settings, Loader2, AlertTriangle } from 'lucide-react'
 import { useAccount, useBalance } from 'wagmi'
 import { useContract } from '../hooks/useContract'
 import { formatEther, parseEther } from 'viem'
 import { toast } from 'react-hot-toast'
+import { getButtonTouchClasses, getMobileText, getMobilePadding } from '../utils/mobile'
 
 interface SwapWidgetProps {
   onSwapComplete?: () => void
@@ -37,16 +38,7 @@ export default function SwapWidget({ onSwapComplete }: SwapWidgetProps) {
     setMounted(true)
   }, [])
 
-  useEffect(() => {
-    if (fromAmount && parseFloat(fromAmount) > 0) {
-      calculateSwapOutput()
-    } else {
-      setToAmount('')
-      setPriceImpact(0)
-    }
-  }, [fromAmount, fromToken, toToken])
-
-  const calculateSwapOutput = async () => {
+  const calculateSwapOutput = useCallback(async () => {
     if (!fromAmount || parseFloat(fromAmount) <= 0) return
 
     try {
@@ -68,7 +60,16 @@ export default function SwapWidget({ onSwapComplete }: SwapWidgetProps) {
       setToAmount('')
       setPriceImpact(0)
     }
-  }
+  }, [fromAmount, fromToken])
+
+  useEffect(() => {
+    if (fromAmount && parseFloat(fromAmount) > 0) {
+      calculateSwapOutput()
+    } else {
+      setToAmount('')
+      setPriceImpact(0)
+    }
+  }, [calculateSwapOutput, fromAmount, fromToken, toToken])
 
   const handleSwap = async () => {
     if (!exchangeContract || !address || !fromAmount || !toAmount) return
@@ -149,16 +150,16 @@ export default function SwapWidget({ onSwapComplete }: SwapWidgetProps) {
   if (!mounted) return null
 
   return (
-    <div className="bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-neon-magenta/20 p-6">
+    <div className={`bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-neon-magenta/20 ${getMobilePadding('md')}`}>
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-white flex items-center gap-2">
+        <h3 className={`font-bold text-white flex items-center gap-2 ${getMobileText('lg')}`}>
           <ArrowUpDown className="w-5 h-5 text-neon-magenta" />
           Swap
         </h3>
         
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className="p-2 text-gray-400 hover:text-white hover:bg-jet-black/50 rounded-lg transition-all duration-300"
+          className={`p-2 text-gray-400 hover:text-white hover:bg-jet-black/50 rounded-lg transition-all duration-300 ${getButtonTouchClasses()}`}
         >
           <Settings className="w-5 h-5" />
         </button>
@@ -354,7 +355,7 @@ export default function SwapWidget({ onSwapComplete }: SwapWidgetProps) {
               parseFloat(fromAmount) <= 0 || 
               isInsufficientBalance()
             }
-            className="w-full px-6 py-4 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-lg font-semibold text-jet-black hover:shadow-lg hover:shadow-neon-magenta/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className={`w-full px-6 py-4 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-lg font-semibold text-jet-black hover:shadow-lg hover:shadow-neon-magenta/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${getButtonTouchClasses()}`}
           >
             {isSwapping ? (
               <>
@@ -371,7 +372,7 @@ export default function SwapWidget({ onSwapComplete }: SwapWidgetProps) {
             )}
           </button>
         ) : (
-          <button className="w-full px-6 py-4 bg-gray-600 rounded-lg font-semibold text-gray-300 cursor-not-allowed">
+          <button className={`w-full px-6 py-4 bg-gray-600 rounded-lg font-semibold text-gray-300 cursor-not-allowed ${getButtonTouchClasses()}`}>
             Connect Wallet to Swap
           </button>
         )}

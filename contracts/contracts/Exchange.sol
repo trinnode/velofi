@@ -210,7 +210,7 @@ contract Exchange {
 
         address pool = getPool(tokenA, tokenB);
         if (pool == address(0)) {
-            pool = createPool(tokenA, tokenB);
+            pool = this.createPool(tokenA, tokenB);
         }
 
         // Calculate optimal amounts

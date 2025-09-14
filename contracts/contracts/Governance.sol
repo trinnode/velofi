@@ -189,20 +189,7 @@ contract Governance {
         return _castVote(msg.sender, proposalId, support);
     }
 
-    /**
-     * @dev Cast vote with reason
-     * @param proposalId ID of the proposal to vote on
-     * @param support Vote type (0=against, 1=for, 2=abstain)
-     * @param reason Reason for the vote
-     */
-    function castVoteWithReason(
-        uint256 proposalId,
-        uint8 support,
-        string memory reason
-    ) external validProposal(proposalId) {
-        _castVote(msg.sender, proposalId, support);
-        // Note: In a full implementation, you'd emit an event with the reason
-    }
+    /** 
 
     /**
      * @dev Internal vote casting logic
@@ -552,7 +539,7 @@ contract Governance {
     /**
      * @dev Get proposal details
      * @param proposalId ID of the proposal
-     * @return Proposal details
+     * Proposal details
      */
     function getProposal(
         uint256 proposalId
@@ -591,9 +578,9 @@ contract Governance {
     /**
      * @dev Get proposal actions
      * @param proposalId ID of the proposal
-     * @return targets Array of target addresses
-     * @return values Array of values
-     * @return calldatas Array of call data
+     * targets Array of target addresses
+     * values Array of values
+     *  calldatas Array of call data
      */
     function getProposalActions(
         uint256 proposalId
@@ -615,7 +602,7 @@ contract Governance {
      * @dev Get receipt for a voter on a proposal
      * @param proposalId ID of the proposal
      * @param voter Address of the voter
-     * @return Receipt information
+     *  Receipt information
      */
     function getReceipt(
         uint256 proposalId,

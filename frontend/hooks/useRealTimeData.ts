@@ -1,83 +1,89 @@
-import { useAccount } from 'wagmi'
-import { useContract } from './useContract'
-import { useState, useEffect, useCallback } from 'react'
-import { formatEther } from 'viem'
+import { useAccount } from "wagmi";
+import { useContract } from "./useContract";
+import { useState, useEffect, useCallback } from "react";
+import { formatEther } from "viem";
 
+// Type definitions
 interface SavingsData {
   userBalance: {
-    principal: bigint
-    accruedInterest: bigint
-    totalBalance: bigint
-    lastUpdate: number
-  } | null
-  totalDeposits: string
-  totalDepositors: number
-  accumulatedInterest: string
-  currentAPY: number
+    principal: bigint;
+    accruedInterest: bigint;
+    totalBalance: bigint;
+    lastUpdate: number;
+  } | null;
+  totalDeposits: string;
+  totalDepositors: number;
+  accumulatedInterest: string;
+  currentAPY: number;
 }
 
 interface CreditData {
-  userScore: number
-  paymentHistory: number
-  creditUtilization: number
-  accountAge: number
-  protocolActivity: number
+  userScore: number;
+  paymentHistory: number;
+  creditUtilization: number;
+  accountAge: number;
+  protocolActivity: number;
   recentActivity: Array<{
-    action: string
-    points: number
-    date: string
-  }>
+    action: string;
+    points: number;
+    date: string;
+  }>;
 }
 
 interface DexData {
-  volume24h: string
-  totalLiquidity: string
-  vlfiPrice: string
-  activePairs: number
+  volume24h: string;
+  totalLiquidity: string;
+  vlfiPrice: string;
+  activePairs: number;
   recentTrades: Array<{
-    type: 'buy' | 'sell'
-    fromAmount: string
-    fromToken: string
-    toAmount: string
-    toToken: string
-    value: string
-    time: string
-  }>
+    type: "buy" | "sell";
+    fromAmount: string;
+    fromToken: string;
+    toAmount: string;
+    toToken: string;
+    value: string;
+    time: string;
+  }>;
 }
 
 interface GovernanceData {
-  totalProposals: number
-  activeVoters: number
-  totalVotingPower: string
-  participationRate: number
-  userVotingPower: number
+  totalProposals: number;
+  activeVoters: number;
+  totalVotingPower: string;
+  participationRate: number;
+  userVotingPower: number;
   proposals: Array<{
-    id: number
-    title: string
-    description: string
-    proposer: string
-    forVotes: number
-    againstVotes: number
-    startTime: number
-    endTime: number
-    executed: boolean
-    hasUserVoted: boolean
-    userVote?: boolean
-  }>
+    id: number;
+    title: string;
+    description: string;
+    proposer: string;
+    forVotes: number;
+    againstVotes: number;
+    startTime: number;
+    endTime: number;
+    executed: boolean;
+    hasUserVoted: boolean;
+    userVote?: boolean;
+  }>;
 }
 
 export function useRealTimeData() {
-  const { address, isConnected } = useAccount()
-  const { savingsContract, creditScoreContract, exchangeContract, governanceContract } = useContract()
+  const { address, isConnected } = useAccount();
+  const {
+    savingsContract,
+    creditScoreContract,
+    exchangeContract,
+    governanceContract,
+  } = useContract();
 
   // State for different data types
   const [savingsData, setSavingsData] = useState<SavingsData>({
     userBalance: null,
-    totalDeposits: '0',
+    totalDeposits: "0",
     totalDepositors: 0,
-    accumulatedInterest: '0',
-    currentAPY: 5.0
-  })
+    accumulatedInterest: "0",
+    currentAPY: 5.0,
+  });
 
   const [creditData, setCreditData] = useState<CreditData>({
     userScore: 0,
@@ -85,275 +91,257 @@ export function useRealTimeData() {
     creditUtilization: 0,
     accountAge: 0,
     protocolActivity: 0,
-    recentActivity: []
-  })
+    recentActivity: [],
+  });
 
   const [dexData, setDexData] = useState<DexData>({
-    volume24h: '0',
-    totalLiquidity: '0',
-    vlfiPrice: '1.25',
+    volume24h: "0",
+    totalLiquidity: "0",
+    vlfiPrice: "1.25",
     activePairs: 3,
-    recentTrades: []
-  })
+    recentTrades: [],
+  });
 
   const [governanceData, setGovernanceData] = useState<GovernanceData>({
     totalProposals: 0,
     activeVoters: 0,
-    totalVotingPower: '0',
+    totalVotingPower: "0",
     participationRate: 0,
     userVotingPower: 0,
-    proposals: []
-  })
+    proposals: [],
+  });
 
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Dynamic dashboard stats
-  const [totalValueLocked, setTotalValueLocked] = useState(28467095)
-  const [activeUsers, setActiveUsers] = useState(12483)
-  const [totalTransactions, setTotalTransactions] = useState(687542)
+  const [totalValueLocked, setTotalValueLocked] = useState(28467095);
+  const [activeUsers, setActiveUsers] = useState(12483);
+  const [totalTransactions, setTotalTransactions] = useState(687542);
 
-  // Fetch savings data
+  // Helper function to get activity name from type
+  const getActivityName = (activityType: number): string => {
+    const activityTypes = [
+      "Deposit",
+      "Withdrawal",
+      "Loan Request",
+      "Loan Repayment",
+      "Governance Vote",
+    ];
+    return activityTypes[activityType] || "Unknown Activity";
+  }; // Fetch savings data
   const fetchSavingsData = useCallback(async () => {
-    if (!savingsContract) return
+    if (!savingsContract || !isConnected || !address) return;
 
     try {
-      // Mock data for demo purposes
-      // In production, these would be actual contract calls
-      const mockSavingsData: SavingsData = {
-        userBalance: isConnected && address ? {
-          principal: BigInt('1000000000000000000'), // 1 VLFI
-          accruedInterest: BigInt('50000000000000000'), // 0.05 VLFI
-          totalBalance: BigInt('1050000000000000000'), // 1.05 VLFI
-          lastUpdate: Math.floor(Date.now() / 1000) - 3600 // 1 hour ago
-        } : null,
-        totalDeposits: '12,450.75',
-        totalDepositors: 342,
-        accumulatedInterest: '1,234.56',
-        currentAPY: 5.0
-      }
-
-      setSavingsData(mockSavingsData)
+      setIsLoading(true);
+      // Get user balance using the real contract function
+      const userBalance = await savingsContract.read.getUserBalance([address]);
+      // Get contract stats
+      const [totalDeposits, contractBalance, currentAPY] = await Promise.all([
+        savingsContract.read.getTotalDeposits(),
+        savingsContract.read.getContractBalance(),
+        savingsContract.read.getCurrentAPY(),
+      ]);
+      // Calculate interest for display
+      const calculatedInterest = await savingsContract.read.calculateInterest([
+        address,
+      ]);
+      setSavingsData({
+        userBalance: {
+          principal: userBalance[0],
+          accruedInterest: calculatedInterest,
+          totalBalance: userBalance[0] + calculatedInterest,
+          lastUpdate: Number(userBalance[2]),
+        },
+        totalDeposits: formatEther(totalDeposits),
+        totalDepositors: 342, // This would need to be tracked separately
+        accumulatedInterest: formatEther(calculatedInterest),
+        currentAPY: Number(currentAPY) / 100,
+      });
     } catch (error) {
-      console.error('Error fetching savings data:', error)
-      setError('Failed to fetch savings data')
+      console.error("Error fetching savings data:", error);
+      // Do not set fallback data
+    } finally {
+      setIsLoading(false);
     }
-  }, [savingsContract, isConnected, address])
-
-  // Fetch credit data
+  }, [savingsContract, isConnected, address]); // Fetch credit data
   const fetchCreditData = useCallback(async () => {
-    if (!creditScoreContract) return
+    if (!creditScoreContract || !isConnected || !address) return;
 
     try {
-      const mockCreditData: CreditData = {
-        userScore: isConnected ? 720 : 0,
-        paymentHistory: isConnected ? 85 : 0,
-        creditUtilization: isConnected ? 65 : 0,
-        accountAge: isConnected ? 75 : 0,
-        protocolActivity: isConnected ? 90 : 0,
-        recentActivity: isConnected ? [
-          { action: 'Loan repayment', points: 50, date: '2 days ago' },
-          { action: 'Savings deposit', points: 25, date: '1 week ago' },
-          { action: 'DEX trade', points: 10, date: '2 weeks ago' }
-        ] : []
-      }
-
-      setCreditData(mockCreditData)
+      // Get user credit score using real contract function
+      const [score, tier, activities] = await Promise.all([
+        creditScoreContract.read.getCreditScore([address]),
+        creditScoreContract.read.getTier([address]),
+        creditScoreContract.read.getActivities([address]),
+      ]);
+      // Get credit details
+      const creditDetails = await creditScoreContract.read.getCreditDetails([
+        address,
+      ]);
+      setCreditData({
+        userScore: Number(score),
+        paymentHistory: Number(creditDetails[0]), // Payment history score
+        creditUtilization: Number(creditDetails[1]), // Utilization score
+        accountAge: Number(creditDetails[2]), // Age score
+        protocolActivity: Number(creditDetails[3]), // Activity score
+        recentActivity: activities.map((activity: any) => ({
+          action: getActivityName(Number(activity.activityType)),
+          points: Number(activity.points),
+          date: new Date(
+            Number(activity.timestamp) * 1000
+          ).toLocaleDateString(),
+        })),
+      });
     } catch (error) {
-      console.error('Error fetching credit data:', error)
-      setError('Failed to fetch credit data')
+      console.error("Error fetching credit data:", error);
+      // Do not set fallback data
     }
-  }, [creditScoreContract, isConnected])
-
-  // Fetch DEX data
+  }, [creditScoreContract, isConnected, address]); // Fetch DEX data
   const fetchDexData = useCallback(async () => {
-    try {
-      const mockDexData: DexData = {
-        volume24h: '89,234.56',
-        totalLiquidity: '1,245,678.90',
-        vlfiPrice: '1.25',
-        activePairs: 3,
-        recentTrades: [
-          {
-            type: 'buy',
-            fromAmount: '100',
-            fromToken: 'VLFI',
-            toAmount: '0.05',
-            toToken: 'ETH',
-            value: '125.50',
-            time: '2 min ago'
-          },
-          {
-            type: 'sell',
-            fromAmount: '0.1',
-            fromToken: 'ETH',
-            toAmount: '195',
-            toToken: 'VLFI',
-            value: '242.75',
-            time: '5 min ago'
-          },
-          {
-            type: 'buy',
-            fromAmount: '50',
-            fromToken: 'VLFI',
-            toAmount: '0.025',
-            toToken: 'ETH',
-            value: '62.25',
-            time: '8 min ago'
-          }
-        ]
-      }
+    if (!exchangeContract) return;
 
-      setDexData(mockDexData)
+    try {
+      // Get real exchange data
+      const [reserveA, reserveB, totalLiquidity, totalVolume, totalFees] =
+        await exchangeContract.read.getExchangeStats();
+      const [priceAtoB] = await exchangeContract.read.currentPrice();
+      setDexData({
+        volume24h: formatEther(totalVolume),
+        totalLiquidity: formatEther(totalLiquidity),
+        vlfiPrice: (Number(priceAtoB) / 1e18).toFixed(4),
+        activePairs: 3, // This would be tracked separately
+        recentTrades: [], // Recent trades would need event listening
+      });
     } catch (error) {
-      console.error('Error fetching DEX data:', error)
-      setError('Failed to fetch DEX data')
+      console.error("Error fetching DEX data:", error);
+      // Do not set fallback data
     }
-  }, [exchangeContract])
+  }, [exchangeContract]);
 
   // Fetch governance data
   const fetchGovernanceData = useCallback(async () => {
+    if (!governanceContract) return;
     try {
-      const mockGovernanceData: GovernanceData = {
-        totalProposals: 8,
-        activeVoters: 156,
-        totalVotingPower: '45,678.90',
-        participationRate: 67.5,
-        userVotingPower: isConnected ? 1250 : 0,
-        proposals: [
-          {
-            id: 1,
-            title: 'Increase Savings APY to 6%',
-            description: 'Proposal to increase the savings account annual percentage yield from 5% to 6% to remain competitive with other DeFi protocols and attract more liquidity.',
-            proposer: '0x742d35Cc6634C0532925a3b8D404c4bD5b5DD227',
-            forVotes: 12450,
-            againstVotes: 3200,
-            startTime: Math.floor(Date.now() / 1000) - (5 * 24 * 60 * 60), // 5 days ago
-            endTime: Math.floor(Date.now() / 1000) + (2 * 24 * 60 * 60), // 2 days from now
-            executed: false,
-            hasUserVoted: false
-          },
-          {
-            id: 2,
-            title: 'Add USDC Trading Pair',
-            description: 'Add USDC as a supported trading pair on the DEX to provide more stable trading options for users.',
-            proposer: '0x1234567890123456789012345678901234567890',
-            forVotes: 8900,
-            againstVotes: 1200,
-            startTime: Math.floor(Date.now() / 1000) - (3 * 24 * 60 * 60), // 3 days ago
-            endTime: Math.floor(Date.now() / 1000) + (4 * 24 * 60 * 60), // 4 days from now
-            executed: false,
-            hasUserVoted: isConnected ? true : false,
-            userVote: true
-          },
-          {
-            id: 3,
-            title: 'Reduce Trading Fees to 0.25%',
-            description: 'Lower the trading fees from 0.3% to 0.25% to increase trading volume and competitiveness.',
-            proposer: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
-            forVotes: 6500,
-            againstVotes: 8900,
-            startTime: Math.floor(Date.now() / 1000) - (10 * 24 * 60 * 60), // 10 days ago
-            endTime: Math.floor(Date.now() / 1000) - (3 * 24 * 60 * 60), // 3 days ago (ended)
-            executed: false,
-            hasUserVoted: isConnected ? true : false,
-            userVote: false
-          }
-        ]
+      // Fetch proposal count and total delegated votes
+      const [proposalCount, totalDelegatedVotes] = await Promise.all([
+        governanceContract.read.proposalCount(),
+        governanceContract.read.totalDelegatedVotes(),
+      ]);
+
+      // Fetch user voting power if connected
+      let userVotingPower = 0;
+      if (isConnected && address) {
+        userVotingPower = await governanceContract.read.getCurrentVotes([
+          address,
+        ]);
       }
 
-      setGovernanceData(mockGovernanceData)
+      // Fetch recent proposals (last 5)
+      const proposals: GovernanceData["proposals"] = [];
+      const maxProposals = Math.min(Number(proposalCount), 5);
+      for (
+        let i = Number(proposalCount);
+        i > Number(proposalCount) - maxProposals && i > 0;
+        i--
+      ) {
+        try {
+          const proposal = await governanceContract.read.getProposal([
+            BigInt(i),
+          ]);
+          let hasUserVoted: [boolean, number, number] = [false, 0, 0];
+          if (isConnected && address) {
+            hasUserVoted = await governanceContract.read.getReceipt([
+              BigInt(i),
+              address,
+            ]);
+          }
+          proposals.push({
+            id: i,
+            title: String(proposal.title),
+            description: String(proposal.description),
+            proposer: String(proposal.proposer),
+            forVotes: Number(proposal.forVotes),
+            againstVotes: Number(proposal.againstVotes),
+            startTime: Number(proposal.startTime),
+            endTime: Number(proposal.endTime),
+            executed: Boolean(proposal.executed),
+            hasUserVoted: Boolean(hasUserVoted[0]),
+            userVote: hasUserVoted[0] ? hasUserVoted[1] === 1 : undefined,
+          });
+        } catch (proposalError) {
+          console.error(`Error fetching proposal ${i}:`, proposalError);
+        }
+      }
+
+      setGovernanceData({
+        totalProposals: Number(proposalCount),
+        activeVoters: 156, // This would need to be tracked separately
+        totalVotingPower: formatEther(totalDelegatedVotes),
+        participationRate: 67.5, // This would need calculation
+        userVotingPower: Number(userVotingPower),
+        proposals,
+      });
     } catch (error) {
-      console.error('Error fetching governance data:', error)
-      setError('Failed to fetch governance data')
+      console.error("Error fetching governance data:", error);
+      // Do not set fallback data
     }
-  }, [governanceContract, isConnected])
-
-  // Update dynamic dashboard stats
-  const updateDashboardStats = useCallback(() => {
-    // Simulate realistic growth and fluctuations
-    setTotalValueLocked(prev => {
-      const change = Math.floor(Math.random() * 20000) - 10000 // -10k to +10k change
-      const newValue = Math.max(prev + change, 20000000) // Minimum 20M
-      return newValue
-    })
-
-    setActiveUsers(prev => {
-      const change = Math.floor(Math.random() * 20) - 10 // -10 to +10 change
-      const newValue = Math.max(prev + change, 10000) // Minimum 10k users
-      return newValue
-    })
-
-    setTotalTransactions(prev => {
-      const change = Math.floor(Math.random() * 100) + 10 // +10 to +110 change (always growing)
-      return prev + change
-    })
-  }, [])
+  }, [governanceContract, isConnected, address]);
+  // ...existing code...
 
   // Refresh all data
   const refreshAllData = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    
+    setIsLoading(true);
     try {
       await Promise.all([
         fetchSavingsData(),
         fetchCreditData(),
         fetchDexData(),
-        fetchGovernanceData()
-      ])
-      
-      // Update dashboard stats after fetching other data
-      updateDashboardStats()
+        fetchGovernanceData(),
+      ]);
+      // Optionally update dashboard stats here if needed
     } catch (error) {
-      console.error('Error refreshing data:', error)
-      setError('Failed to refresh data')
+      console.error("Error refreshing data:", error);
+      setError("Failed to refresh data");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [fetchSavingsData, fetchCreditData, fetchDexData, fetchGovernanceData, updateDashboardStats])
+  }, [fetchSavingsData, fetchCreditData, fetchDexData, fetchGovernanceData]);
 
   // Individual refresh functions
   const refreshSavingsData = useCallback(() => {
-    fetchSavingsData()
-  }, [fetchSavingsData])
+    fetchSavingsData();
+  }, [fetchSavingsData]);
 
   const refreshCreditData = useCallback(() => {
-    fetchCreditData()
-  }, [fetchCreditData])
+    fetchCreditData();
+  }, [fetchCreditData]);
 
   const refreshDexData = useCallback(() => {
-    fetchDexData()
-  }, [fetchDexData])
+    fetchDexData();
+  }, [fetchDexData]);
 
   const refreshGovernanceData = useCallback(() => {
-    fetchGovernanceData()
-  }, [fetchGovernanceData])
+    fetchGovernanceData();
+  }, [fetchGovernanceData]);
 
   // Initial data fetch
   useEffect(() => {
-    refreshAllData()
-  }, [refreshAllData])
+    refreshAllData();
+  }, [refreshAllData]);
 
-  // Set up real-time data updates (polling)
+  // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      if (isConnected) {
-        refreshAllData()
+      // Only refresh contract data every 2 minutes to avoid too many calls
+      if (Date.now() % 120000 < 30000) {
+        refreshAllData();
       }
-    }, 30000) // Update every 30 seconds
+    }, 30000);
 
-    return () => clearInterval(interval)
-  }, [isConnected, refreshAllData])
-
-  // Set up more frequent dashboard stats updates
-  useEffect(() => {
-    const statsInterval = setInterval(() => {
-      updateDashboardStats()
-    }, 5000) // Update stats every 5 seconds for more dynamic feel
-
-    return () => clearInterval(statsInterval)
-  }, [updateDashboardStats])
+    return () => clearInterval(interval);
+  }, [refreshAllData]);
 
   return {
     // Data
@@ -361,21 +349,21 @@ export function useRealTimeData() {
     creditData,
     dexData,
     governanceData,
-    
-    // State
-    isLoading,
-    error,
-    
-    // Dynamic dashboard stats
+
+    // Dashboard stats
     totalValueLocked,
     activeUsers,
     totalTransactions,
-    
+
+    // Loading and error states
+    isLoading,
+    error,
+
     // Refresh functions
     refreshAllData,
     refreshSavingsData,
     refreshCreditData,
     refreshDexData,
-    refreshGovernanceData
-  }
+    refreshGovernanceData,
+  };
 }

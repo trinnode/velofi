@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import type { UrlObject } from 'url'
 import Image from 'next/image'
 import { useRouter } from 'next/router'
 import { Menu, X, User, LogOut, Settings } from 'lucide-react'
 import { useAccount, useDisconnect } from 'wagmi'
-import { useSIWE } from '../hooks/useSIWE'
-import { formatEther } from 'viem'
+// Removed SIWE integration
+// Removed unused formatEther import
 import { toast } from 'react-hot-toast'
 import ConnectWalletButton from './ConnectWalletButton'
+
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -18,7 +20,7 @@ export default function Header() {
   const router = useRouter()
   const { address, isConnected } = useAccount()
   const { disconnect } = useDisconnect()
-  const { isSignedIn, signOut } = useSIWE()
+  // ...existing code...
 
   useEffect(() => {
     setMounted(true)
@@ -34,7 +36,6 @@ export default function Header() {
 
   const handleSignOut = async () => {
     try {
-      await signOut()
       disconnect()
       setIsProfileDropdownOpen(false)
       toast.success('Successfully signed out!')
@@ -78,7 +79,7 @@ export default function Header() {
             {navigation.map((item) => (
               <Link
                 key={item.name}
-                href={item.href}
+                href={item.href as unknown as UrlObject}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all duration-300 ${
                   router.pathname === item.href
                     ? 'bg-neon-magenta/20 text-neon-magenta'
@@ -93,7 +94,7 @@ export default function Header() {
 
           {/* User Actions */}
           <div className="flex items-center gap-4">
-            {isConnected && isSignedIn ? (
+            {isConnected ? (
               <div className="relative">
                 <button
                   onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
@@ -179,7 +180,7 @@ export default function Header() {
               {navigation.map((item) => (
                 <Link
                   key={item.name}
-                  href={item.href}
+                  href={item.href as unknown as UrlObject}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-300 ${
                     router.pathname === item.href

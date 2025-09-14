@@ -410,7 +410,7 @@ export default function SavingsPageEnhanced() {
                         <span className="text-electric-lime font-semibold">0%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-400">You&apos;ll Receive</span>
+                        <span className="text-gray-400">You&#39;ll Receive</span>
                         <span className="text-white font-semibold">
                           ${(parseFloat(withdrawAmount) || 0).toFixed(2)}
                         </span>

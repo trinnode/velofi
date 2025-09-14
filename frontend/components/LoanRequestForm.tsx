@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { CreditCard, DollarSign, Calendar, Percent, Info, Loader2, AlertCircle } from 'lucide-react'
+import { CreditCard, AlertCircle, Info, Loader2 } from 'lucide-react'
 import { useContract } from '../hooks/useContract'
 import { useAccount } from 'wagmi'
 import { parseEther } from 'viem'

@@ -31,7 +31,7 @@ export default function ProposalCard({
   isVoting = false,
   className = '' 
 }: ProposalCardProps) {
-  const { address, isConnected } = useAccount()
+  const { isConnected } = useAccount()
   const [showFullDescription, setShowFullDescription] = useState(false)
 
   const getProposalStatus = () => {

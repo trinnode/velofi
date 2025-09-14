@@ -1,508 +1,337 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { ArrowUpDown, TrendingUp, Zap, DollarSign, ArrowDown, ArrowUp, BarChart3, Loader2 } from 'lucide-react'
-import { useAccount, useBalance } from 'wagmi'
-import { useContract } from '../hooks/useContract'
-import { useRealTimeData } from '../hooks/useRealTimeData'
-import { formatEther, parseEther } from 'viem'
-import { toast } from 'react-hot-toast'
-import ConnectWalletButton from '../components/ConnectWalletButton'
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { 
+  TrendingUp, 
+  TrendingDown,
+  Zap, 
+  DollarSign, 
+  BarChart3, 
+  Activity,
+  RefreshCw,
+  Search,
+  Target,
+  Clock
+} from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { useRealTimeData } from '../hooks/useRealTimeData';
+import { toast } from 'react-hot-toast';
+import ConnectWalletButton from '../components/ConnectWalletButton';
+import SwapWidget from '../components/SwapWidget';
+
+interface TradingPair {
+  symbol: string;
+  name: string;
+  price: number;
+  change24h: number;
+  volume24h: number;
+  liquidity: number;
+  icon: string;
+}
+
+interface MarketStats {
+  totalValueLocked: number;
+  totalVolume24h: number;
+  totalTrades24h: number;
+  averageFee: number;
+}
 
 export default function DexPage() {
-  const { address, isConnected } = useAccount()
-  const [mounted, setMounted] = useState(false)
-  const [fromAmount, setFromAmount] = useState('')
-  const [toAmount, setToAmount] = useState('')
-  const [fromToken, setFromToken] = useState('VLFI')
-  const [toToken, setToToken] = useState('ETH')
-  const [isSwapping, setIsSwapping] = useState(false)
-  const [priceImpact, setPriceImpact] = useState(0)
+  const { isConnected } = useAccount();
+  const [mounted, setMounted] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('swap');
 
-  const { exchangeContract, mockTokenContract } = useContract()
-  const { dexData, refreshDexData } = useRealTimeData()
-
-  const { data: vlfiBalance } = useBalance({
-    address,
-    token: process.env.NEXT_PUBLIC_MOCK_TOKEN_ADDRESS as `0x${string}`,
-  })
-
-  const { data: ethBalance } = useBalance({
-    address,
-  })
+  const realTimeData = useRealTimeData();
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  // Calculate estimated output when input changes
-  useEffect(() => {
-    if (fromAmount && exchangeContract) {
-      calculateSwapOutput()
+  const tradingPairs: TradingPair[] = [
+    {
+      symbol: 'VLFI/ETH',
+      name: 'VeloFi / Ethereum',
+      price: 0.000357,
+      change24h: 8.42,
+      volume24h: 1250000,
+      liquidity: 5800000,
+      icon: '💎'
+    },
+    {
+      symbol: 'VLFI/USDC',
+      name: 'VeloFi / USD Coin',
+      price: 1.25,
+      change24h: -2.15,
+      volume24h: 890000,
+      liquidity: 3200000,
+      icon: '💵'
+    },
+    {
+      symbol: 'ETH/USDC',
+      name: 'Ethereum / USD Coin',
+      price: 3500,
+      change24h: 5.23,
+      volume24h: 12500000,
+      liquidity: 45000000,
+      icon: '⟠'
     }
-  }, [fromAmount, fromToken, toToken])
+  ];
 
-  const calculateSwapOutput = async () => {
-    if (!fromAmount || !exchangeContract) return
+  const marketStats: MarketStats = {
+    totalValueLocked: realTimeData?.totalValueLocked || 125000000,
+    totalVolume24h: 45600000,
+    totalTrades24h: 12834,
+    averageFee: 0.3
+  };
 
-    try {
-      const amountIn = parseEther(fromAmount)
-      // This would call a view function on the exchange contract to get estimated output
-      // For now, using a simple calculation for demo
-      const estimated = (parseFloat(fromAmount) * 0.95).toFixed(6) // 5% fee
-      setToAmount(estimated)
-      setPriceImpact(5.0)
-    } catch (error) {
-      console.error('Error calculating swap output:', error)
-    }
-  }
+  const filteredPairs = tradingPairs.filter(pair =>
+    pair.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pair.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const handleSwap = async () => {
-    if (!exchangeContract || !mockTokenContract || !address || !fromAmount) return
+  const formatNumber = (num: number, decimals = 2) => {
+    if (num >= 1e9) return `$${(num / 1e9).toFixed(decimals)}B`;
+    if (num >= 1e6) return `$${(num / 1e6).toFixed(decimals)}M`;
+    if (num >= 1e3) return `$${(num / 1e3).toFixed(decimals)}K`;
+    return `$${num.toFixed(decimals)}`;
+  };
 
-    try {
-      setIsSwapping(true)
-      const amountIn = parseEther(fromAmount)
+  const formatPrice = (price: number) => {
+    if (price < 0.001) return price.toExponential(3);
+    return price.toFixed(price >= 1 ? 2 : 6);
+  };
 
-      if (fromToken === 'VLFI') {
-        // Approve token spending first
-        const approveTx = await mockTokenContract.write.approve([
-          exchangeContract.address,
-          amountIn
-        ])
-        await approveTx.wait()
-
-        // Swap VLFI for ETH
-        const swapTx = await exchangeContract.write.swapTokensForEth([
-          amountIn,
-          parseEther(toAmount)
-        ])
-        await swapTx.wait()
-      } else {
-        // Swap ETH for VLFI
-        const swapTx = await exchangeContract.write.swapEthForTokens([
-          parseEther(toAmount)
-        ], { value: amountIn })
-        await swapTx.wait()
-      }
-
-      toast.success('Swap successful!')
-      setFromAmount('')
-      setToAmount('')
-      refreshDexData()
-    } catch (error) {
-      console.error('Swap failed:', error)
-      toast.error('Swap failed. Please try again.')
-    } finally {
-      setIsSwapping(false)
-    }
-  }
-
-  const switchTokens = () => {
-    setFromToken(toToken)
-    setToToken(fromToken)
-    setFromAmount(toAmount)
-    setToAmount(fromAmount)
-  }
-
-  if (!mounted) return null
+  if (!mounted) return null;
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-rich-black via-jet-black to-gunmetal-gray">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-neon-magenta/20 rounded-full">
-              <ArrowUpDown className="w-12 h-12 text-neon-magenta" />
-            </div>
-          </div>
           <h1 className="text-4xl lg:text-6xl font-bold mb-4 bg-gradient-to-r from-neon-magenta to-electric-lime bg-clip-text text-transparent">
-            Decentralized Exchange
+            VeloFi DEX
           </h1>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Trade tokens with low fees and high speed on Somnia Network's optimized infrastructure.
-            Experience seamless swaps with real-time price discovery.
+          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            Trade tokens instantly with the lowest fees and deepest liquidity on Somnia Network
           </p>
         </motion.div>
 
-        {/* DEX Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12"
+        >
           {[
-            {
-              title: "24h Volume",
-              value: `${dexData.volume24h} VLFI`,
-              change: "+18.5%",
-              icon: <BarChart3 className="w-6 h-6" />,
-              color: "electric-lime"
+            { 
+              title: "Total Value Locked", 
+              value: formatNumber(marketStats.totalValueLocked),
+              icon: <Target className="w-6 h-6 text-electric-lime" />,
+              change: "+12.5%"
             },
-            {
-              title: "Total Liquidity",
-              value: `${dexData.totalLiquidity} VLFI`,
-              change: "+5.2%",
-              icon: <DollarSign className="w-6 h-6" />,
-              color: "neon-magenta"
+            { 
+              title: "24h Volume", 
+              value: formatNumber(marketStats.totalVolume24h),
+              icon: <BarChart3 className="w-6 h-6 text-neon-magenta" />,
+              change: "+8.2%"
             },
-            {
-              title: "VLFI Price",
-              value: `$${dexData.vlfiPrice}`,
-              change: "+2.1%",
-              icon: <TrendingUp className="w-6 h-6" />,
-              color: "electric-lime"
+            { 
+              title: "24h Trades", 
+              value: marketStats.totalTrades24h.toLocaleString(),
+              icon: <Activity className="w-6 h-6 text-blue-400" />,
+              change: "+15.7%"
             },
-            {
-              title: "Active Pairs",
-              value: dexData.activePairs.toString(),
-              change: "+1 today",
-              icon: <Zap className="w-6 h-6" />,
-              color: "neon-magenta"
+            { 
+              title: "Avg Fee", 
+              value: `${marketStats.averageFee}%`,
+              icon: <DollarSign className="w-6 h-6 text-green-400" />,
+              change: "Fixed"
             }
           ].map((stat, index) => (
             <motion.div
               key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="bg-jet-black/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 hover:border-neon-magenta/30 transition-all duration-300"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 + index * 0.1 }}
+              className="bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-neon-magenta/20 p-6"
             >
-              <div className={`flex items-center gap-3 mb-4 text-${stat.color}`}>
+              <div className="flex items-center justify-between mb-2">
                 {stat.icon}
-                <span className="text-sm font-medium text-gray-300">{stat.title}</span>
+                <span className={`text-sm font-medium ${
+                  stat.change.startsWith('+') ? 'text-green-400' : 
+                  stat.change.startsWith('-') ? 'text-red-400' : 'text-gray-400'
+                }`}>
+                  {stat.change}
+                </span>
               </div>
-              <div className="text-2xl font-bold text-white mb-2">{stat.value}</div>
-              <div className={`text-sm text-${stat.color} flex items-center gap-1`}>
-                <ArrowUp className="w-4 h-4" />
-                {stat.change}
-              </div>
+              <p className="text-gray-400 text-sm">{stat.title}</p>
+              <p className="text-2xl font-bold text-white">{stat.value}</p>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Swap Interface */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-1"
-          >
-            <div className="bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-neon-magenta/20 p-8">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <ArrowUpDown className="w-6 h-6 text-neon-magenta" />
-                Swap Tokens
-              </h2>
-
-              {isConnected ? (
-                <div className="space-y-4">
-                  {/* From Token */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <label className="text-sm font-medium text-gray-300">From</label>
-                      <div className="text-sm text-gray-400">
-                        Balance: {fromToken === 'VLFI' 
-                          ? vlfiBalance ? formatEther(vlfiBalance.value) : '0.00'
-                          : ethBalance ? formatEther(ethBalance.value) : '0.00'
-                        } {fromToken}
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={fromAmount}
-                        onChange={(e) => setFromAmount(e.target.value)}
-                        className="w-full px-4 py-4 bg-jet-black border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-neon-magenta focus:ring-1 focus:ring-neon-magenta outline-none transition-colors pr-20"
-                        placeholder="0.00"
-                      />
-                      <div className="absolute right-4 top-4">
-                        <select
-                          value={fromToken}
-                          onChange={(e) => setFromToken(e.target.value)}
-                          className="bg-transparent text-white border-none outline-none cursor-pointer"
-                        >
-                          <option value="VLFI" className="bg-jet-black">VLFI</option>
-                          <option value="ETH" className="bg-jet-black">ETH</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Swap Direction Button */}
-                  <div className="flex justify-center">
-                    <button
-                      onClick={switchTokens}
-                      className="p-3 bg-jet-black border-2 border-electric-lime rounded-full hover:bg-electric-lime hover:text-jet-black transition-all duration-300 group"
-                    >
-                      <ArrowUpDown className="w-5 h-5 text-electric-lime group-hover:text-jet-black transition-colors" />
-                    </button>
-                  </div>
-
-                  {/* To Token */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <label className="text-sm font-medium text-gray-300">To</label>
-                      <div className="text-sm text-gray-400">
-                        Balance: {toToken === 'VLFI' 
-                          ? vlfiBalance ? formatEther(vlfiBalance.value) : '0.00'
-                          : ethBalance ? formatEther(ethBalance.value) : '0.00'
-                        } {toToken}
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={toAmount}
-                        readOnly
-                        className="w-full px-4 py-4 bg-jet-black border border-gray-600 rounded-lg text-white placeholder-gray-400 outline-none pr-20"
-                        placeholder="0.00"
-                      />
-                      <div className="absolute right-4 top-4">
-                        <select
-                          value={toToken}
-                          onChange={(e) => setToToken(e.target.value)}
-                          className="bg-transparent text-white border-none outline-none cursor-pointer"
-                        >
-                          <option value="ETH" className="bg-jet-black">ETH</option>
-                          <option value="VLFI" className="bg-jet-black">VLFI</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Price Impact & Details */}
-                  {fromAmount && toAmount && (
-                    <div className="bg-jet-black/50 rounded-lg p-4 space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Exchange Rate</span>
-                        <span className="text-white">1 {fromToken} = {(parseFloat(toAmount) / parseFloat(fromAmount)).toFixed(6)} {toToken}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Price Impact</span>
-                        <span className={`${priceImpact > 3 ? 'text-red-500' : 'text-electric-lime'}`}>
-                          {priceImpact.toFixed(2)}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Network Fee</span>
-                        <span className="text-white">~$0.01</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Swap Button */}
+          <div className="lg:col-span-1">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-neon-magenta/20 p-6"
+            >
+              <div className="flex space-x-4 mb-6">
+                {['swap', 'limit', 'pool'].map((tab) => (
                   <button
-                    onClick={handleSwap}
-                    disabled={isSwapping || !fromAmount || !toAmount}
-                    className="w-full px-6 py-4 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-lg font-semibold text-jet-black hover:shadow-lg hover:shadow-neon-magenta/25 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors capitalize ${
+                      activeTab === tab
+                        ? 'bg-neon-magenta text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    }`}
                   >
-                    {isSwapping ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Swapping...
-                      </>
-                    ) : (
-                      <>
-                        <ArrowUpDown className="w-5 h-5" />
-                        Swap Tokens
-                      </>
-                    )}
+                    {tab}
                   </button>
-                </div>
-              ) : (
-                <div className="text-center text-gray-400 py-8">
-                  <p className="mb-4">Connect your wallet to start trading</p>
-                  <ConnectWalletButton 
-                    variant="primary"
-                    size="md"
-                    className="w-auto"
-                  />
+                ))}
+              </div>
+
+              {activeTab === 'swap' && (
+                <SwapWidget onSwapComplete={() => toast.success('Swap completed!')} />
+              )}
+
+              {activeTab === 'limit' && (
+                <div className="text-center py-12">
+                  <Clock className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-white mb-2">Limit Orders</h3>
+                  <p className="text-gray-400">Coming soon! Set your desired price and let the market come to you.</p>
                 </div>
               )}
-            </div>
-          </motion.div>
 
-          {/* Trading Chart & Recent Trades */}
+              {activeTab === 'pool' && (
+                <div className="text-center py-12">
+                  <Target className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-white mb-2">Liquidity Pools</h3>
+                  <p className="text-gray-400">Provide liquidity and earn fees from trades.</p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+
+          <div className="lg:col-span-2 space-y-8">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-neon-magenta/20"
+            >
+              <div className="p-6 border-b border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-white">Trading Pairs</h2>
+                  <div className="flex items-center space-x-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search pairs..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-10 pr-4 py-2 bg-jet-black border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-neon-magenta focus:ring-1 focus:ring-neon-magenta outline-none"
+                      />
+                    </div>
+                    <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-700">
+                      <th className="text-left p-4 text-gray-400 font-medium">Pair</th>
+                      <th className="text-right p-4 text-gray-400 font-medium">Price</th>
+                      <th className="text-right p-4 text-gray-400 font-medium">24h Change</th>
+                      <th className="text-right p-4 text-gray-400 font-medium">24h Volume</th>
+                      <th className="text-right p-4 text-gray-400 font-medium">Liquidity</th>
+                      <th className="text-right p-4 text-gray-400 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPairs.map((pair, index) => (
+                      <motion.tr
+                        key={pair.symbol}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 + index * 0.1 }}
+                        className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors cursor-pointer"
+                      >
+                        <td className="p-4">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl">{pair.icon}</span>
+                            <div>
+                              <div className="font-semibold text-white">{pair.symbol}</div>
+                              <div className="text-sm text-gray-400">{pair.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-right p-4">
+                          <div className="font-semibold text-white">${formatPrice(pair.price)}</div>
+                        </td>
+                        <td className="text-right p-4">
+                          <div className={`flex items-center justify-end space-x-1 ${
+                            pair.change24h >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
+                            {pair.change24h >= 0 ? (
+                              <TrendingUp className="w-4 h-4" />
+                            ) : (
+                              <TrendingDown className="w-4 h-4" />
+                            )}
+                            <span className="font-medium">
+                              {pair.change24h >= 0 ? '+' : ''}{pair.change24h.toFixed(2)}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="text-right p-4">
+                          <div className="text-white font-medium">{formatNumber(pair.volume24h)}</div>
+                        </td>
+                        <td className="text-right p-4">
+                          <div className="text-white font-medium">{formatNumber(pair.liquidity)}</div>
+                        </td>
+                        <td className="text-right p-4">
+                          <button className="px-3 py-1 bg-neon-magenta/20 text-neon-magenta border border-neon-magenta/30 rounded-lg hover:bg-neon-magenta/30 transition-colors text-sm font-medium">
+                            Trade
+                          </button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {!isConnected && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="lg:col-span-2 space-y-8"
+            transition={{ delay: 0.6 }}
+            className="mt-12 text-center"
           >
-            {/* Price Chart */}
-            <div className="bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-electric-lime/20 p-8">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <TrendingUp className="w-6 h-6 text-electric-lime" />
-                VLFI/ETH Price Chart
-              </h2>
-              
-              <div className="h-64 flex items-center justify-center border-2 border-dashed border-gray-600 rounded-lg">
-                <div className="text-center text-gray-400">
-                  <BarChart3 className="w-16 h-16 mx-auto mb-4 text-gray-500" />
-                  <p className="text-lg">Trading chart will be displayed here</p>
-                  <p className="text-sm mt-2">Real-time price data visualization</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Trades */}
             <div className="bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-neon-magenta/20 p-8">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <Zap className="w-6 h-6 text-neon-magenta" />
-                Recent Trades
-              </h2>
-              
-              <div className="space-y-3">
-                {dexData.recentTrades?.length > 0 ? (
-                  dexData.recentTrades.map((trade, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-jet-black/30 rounded-lg border border-gray-700">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${trade.type === 'buy' ? 'bg-electric-lime' : 'bg-red-500'}`} />
-                        <span className="text-white font-medium">
-                          {trade.fromAmount} {trade.fromToken} → {trade.toAmount} {trade.toToken}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-white">${trade.value}</div>
-                        <div className="text-sm text-gray-400">{trade.time}</div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <>
-                    {/* Mock recent trades for demo */}
-                    {[
-                      { type: 'buy', fromAmount: '100', fromToken: 'VLFI', toAmount: '0.05', toToken: 'ETH', value: '125.50', time: '2 min ago' },
-                      { type: 'sell', fromAmount: '0.1', fromToken: 'ETH', toAmount: '195', toToken: 'VLFI', value: '242.75', time: '5 min ago' },
-                      { type: 'buy', fromAmount: '50', fromToken: 'VLFI', toAmount: '0.025', toToken: 'ETH', value: '62.25', time: '8 min ago' }
-                    ].map((trade, index) => (
-                      <div key={index} className="flex items-center justify-between p-4 bg-jet-black/30 rounded-lg border border-gray-700">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${trade.type === 'buy' ? 'bg-electric-lime' : 'bg-red-500'}`} />
-                          <span className="text-white font-medium">
-                            {trade.fromAmount} {trade.fromToken} → {trade.toAmount} {trade.toToken}
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-white">${trade.value}</div>
-                          <div className="text-sm text-gray-400">{trade.time}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
+              <Zap className="w-16 h-16 text-neon-magenta mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-4">Connect Your Wallet</h2>
+              <p className="text-gray-300 mb-6 max-w-md mx-auto">
+                Connect your wallet to start trading on VeloFi DEX with the lowest fees and best prices.
+              </p>
+              <ConnectWalletButton />
             </div>
           </motion.div>
-        </div>
-
-        {/* Liquidity Pools */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-12"
-        >
-          <div className="bg-gradient-to-br from-gunmetal-gray to-jet-black rounded-xl border border-gray-700/50 p-8">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">Liquidity Pools</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                {
-                  pair: "VLFI/ETH",
-                  tvl: "$1,245,678",
-                  apy: "12.5%",
-                  volume24h: "$89,234",
-                  yourLiquidity: "$0"
-                },
-                {
-                  pair: "VLFI/USDC", 
-                  tvl: "$892,456",
-                  apy: "8.9%",
-                  volume24h: "$45,678",
-                  yourLiquidity: "$0"
-                },
-                {
-                  pair: "ETH/USDC",
-                  tvl: "$2,134,567",
-                  apy: "6.2%",
-                  volume24h: "$156,789",
-                  yourLiquidity: "$0"
-                }
-              ].map((pool, index) => (
-                <div key={pool.pair} className="bg-jet-black/30 rounded-lg border border-gray-700 p-6 hover:border-electric-lime/30 transition-all duration-300">
-                  <div className="text-center mb-6">
-                    <h3 className="text-xl font-bold text-white mb-2">{pool.pair}</h3>
-                    <div className="text-3xl font-bold text-electric-lime">{pool.apy}</div>
-                    <div className="text-sm text-gray-400">APY</div>
-                  </div>
-                  
-                  <div className="space-y-3 mb-6">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">TVL</span>
-                      <span className="text-white">{pool.tvl}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">24h Volume</span>
-                      <span className="text-white">{pool.volume24h}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Your Liquidity</span>
-                      <span className="text-white">{pool.yourLiquidity}</span>
-                    </div>
-                  </div>
-                  
-                  <button className="w-full px-4 py-2 border-2 border-electric-lime text-electric-lime rounded-lg hover:bg-electric-lime hover:text-jet-black transition-all duration-300">
-                    Add Liquidity
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* How It Works */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="mt-12"
-        >
-          <div className="bg-gradient-to-r from-neon-magenta/10 to-electric-lime/10 rounded-xl p-8">
-            <h2 className="text-3xl font-bold text-white mb-8 text-center">How VeloFi DEX Works</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[
-                {
-                  step: "1",
-                  title: "Choose Your Tokens",
-                  description: "Select the tokens you want to swap from our supported token pairs with real-time pricing."
-                },
-                {
-                  step: "2",
-                  title: "Execute the Swap",
-                  description: "Confirm your transaction and execute the swap with minimal slippage and competitive fees."
-                },
-                {
-                  step: "3",
-                  title: "Provide Liquidity",
-                  description: "Earn fees by providing liquidity to trading pairs and help improve the DEX ecosystem."
-                }
-              ].map((item, index) => (
-                <div key={item.step} className="text-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-neon-magenta to-electric-lime rounded-full flex items-center justify-center text-jet-black font-bold text-xl mx-auto mb-4">
-                    {item.step}
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
-                  <p className="text-gray-300 leading-relaxed">{item.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        )}
       </div>
     </div>
-  )
+  );
 }

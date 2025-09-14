@@ -1,7 +1,8 @@
+// Removed unused imports
 import { useState, useEffect } from 'react'
-import { Wallet, ChevronDown, Copy, ExternalLink, Power, Network } from 'lucide-react'
-import { useAccount, useDisconnect, useConnect, useChainId, useSwitchChain } from 'wagmi'
-import { useSIWE } from '../hooks/useSIWE'
+import { Wallet, ChevronDown, Copy, ExternalLink, Power } from 'lucide-react'
+import { useAccount, useDisconnect, useConnect } from 'wagmi'
+// Removed SIWE integration
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'react-hot-toast'
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../utils/constants'
@@ -25,17 +26,16 @@ export default function ConnectWalletButton({
   const { address, isConnected, connector } = useAccount()
   const { disconnect } = useDisconnect()
   const { connect, connectors } = useConnect()
-  const { signIn, isSignedIn, signOut } = useSIWE()
-  const chainId = useChainId()
-  const { switchChain } = useSwitchChain()
+  // ...existing code...
+  // Removed unused chainId
+  // Removed unused switchChain
 
   // Auto-sign after wallet connection
   useEffect(() => {
     const autoSign = async () => {
-      if (isConnected && !isSignedIn && !isConnecting) {
+  if (isConnected && !isConnecting) {
         try {
           setIsConnecting(true)
-          await signIn()
           toast.success(SUCCESS_MESSAGES.SIGN_IN_SUCCESS)
         } catch (error) {
           console.error('Auto-sign failed:', error)
@@ -47,7 +47,7 @@ export default function ConnectWalletButton({
     }
 
     autoSign()
-  }, [isConnected, isSignedIn, signIn, isConnecting])
+  }, [isConnected, isConnecting])
 
   const handleConnect = async () => {
     try {
@@ -72,7 +72,6 @@ export default function ConnectWalletButton({
 
   const handleDisconnect = async () => {
     try {
-      await signOut()
       disconnect()
       setIsDropdownOpen(false)
       toast.success('Wallet disconnected')
@@ -120,7 +119,7 @@ export default function ConnectWalletButton({
   }
 
   // If not connected, show connect button
-  if (!isConnected || !isSignedIn) {
+  if (!isConnected) {
     return (
       <button
         onClick={handleConnect}

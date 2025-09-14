@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { TrendingUp, Zap, Clock, DollarSign } from 'lucide-react'
-import { useRealTimeData } from '../hooks/useRealTimeData'
 import { formatEther } from 'viem'
 
 interface InterestAccrualDisplayProps {
@@ -22,7 +21,6 @@ export default function InterestAccrualDisplay({
 }: InterestAccrualDisplayProps) {
   const [displayInterest, setDisplayInterest] = useState<string>('0.000000')
   const [isAccruing, setIsAccruing] = useState(false)
-  const { savingsData } = useRealTimeData()
 
   useEffect(() => {
     if (!userBalance || userBalance.principal === 0n) return

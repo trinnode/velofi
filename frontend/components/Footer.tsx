@@ -100,13 +100,25 @@ export default function Footer() {
             <ul className="space-y-3">
               {productLinks.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
-                  >
-                    {link.name}
-                    <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Link>
+                  {link.href.startsWith('http') ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
+                    >
+                      {link.name}
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  ) : (
+                    <Link
+                      href={{pathname: link.href}}
+                      className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
+                    >
+                      {link.name}
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -118,13 +130,25 @@ export default function Footer() {
             <ul className="space-y-3">
               {resourceLinks.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
-                  >
-                    {link.name}
-                    <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Link>
+                  {link.href.startsWith('http') ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
+                    >
+                      {link.name}
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  ) : (
+                    <Link
+                      href={{pathname: link.href}}
+                      className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
+                    >
+                      {link.name}
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -136,13 +160,25 @@ export default function Footer() {
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
-                  >
-                    {link.name}
-                    <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </Link>
+                  {link.href.startsWith('http') ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
+                    >
+                      {link.name}
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </a>
+                  ) : (
+                    <Link
+                      href={{pathname: link.href}}
+                      className="text-gray-400 hover:text-electric-lime transition-colors duration-300 flex items-center gap-2 group"
+                    >
+                      {link.name}
+                      <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
